@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kairo</title>
+<style>
+  :root{
+    --bg:#141416;
+    --bg-2:#1c1c1f;
+    --bg-3:#232327;
+    --border:#2c2c30;
+    --text:#eceae4;
+    --text-dim:#8c8b8e;
+    --text-faint:#5f5e62;
+    --accent1:#A4A7FF;
+    --accent2:#589DFF;
+    --accent3:#366CEC;
+    --accent: var(--accent2);
+    --font-serif: Georgia, 'Times New Roman', serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-sans);
+    overflow:hidden;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+
+  /* ---------- Sidebar ---------- */
+  #sidebar{
+    position:fixed; top:0; left:0; bottom:0;
+    width:270px;
+    background:var(--bg-2);
+    border-right:1px solid var(--border);
+    transform:translateX(-100%);
+    transition:transform .32s cubic-bezier(.4,0,.2,1);
+    z-index:40;
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px) 0;
+    display:flex; flex-direction:column;
+  }
+  #sidebar.open{ transform:translateX(0); }
+  .sb-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 20px 10px;
+  }
+  .sb-title{
+    font-family:var(--font-serif); font-size:22px; letter-spacing:.3px;
+  }
+  .sb-nav{ padding:10px 10px; display:flex; flex-direction:column; gap:2px;}
+  .sb-item{
+    display:flex; align-items:center; gap:12px;
+    padding:11px 12px; border-radius:10px;
+    color:var(--text-dim); font-size:15px;
+    cursor:pointer; border:none; background:none; text-align:left; width:100%;
+    transition:background .15s, color .15s;
+  }
+  .sb-item:hover{ background:var(--bg-3); color:var(--text); }
+  .sb-item svg{ flex-shrink:0; opacity:.85; }
+  .sb-recent{
+    margin-top:14px; padding:0 20px; font-size:12px; color:var(--text-faint);
+  }
+  .sb-foot{
+    margin-top:auto; padding:16px 20px; display:flex; align-items:center; gap:10px;
+    border-top:1px solid var(--border);
+  }
+  .sb-avatar{
+    width:28px; height:28px; border-radius:50%; background:var(--bg-3);
+    display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-dim);
+  }
+
+  #scrim{
+    position:fixed; inset:0; background:rgba(0,0,0,.35);
+    opacity:0; pointer-events:none; transition:opacity .32s ease; z-index:35;
+  }
+  #scrim.show{ opacity:1; pointer-events:auto; }
+
+  /* ---------- Main ---------- */
+  #main{
+    position:relative;
+    height:100vh; height:100dvh;
+    display:flex; flex-direction:column;
+    transition:transform .32s cubic-bezier(.4,0,.2,1);
+    transform:translateX(0);
+  }
+  #main.pushed{ transform:translateX(270px); }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px 10px;
+    padding-top:calc(16px + env(safe-area-inset-top,0px));
+    flex-shrink:0;
+  }
+  .icon-btn{
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:none; border:none; color:var(--text); cursor:pointer;
+    transition:background .15s;
+  }
+  .icon-btn:hover{ background:var(--bg-3); }
+
+  #model-select{
+    display:flex; align-items:center; gap:6px;
+    background:var(--bg-3);
+    border:1px solid var(--border);
+    padding:7px 14px 7px 12px;
+    border-radius:999px;
+    font-size:13.5px; color:var(--text);
+    cursor:pointer; user-select:none;
+    transition:border-color .15s;
+  }
+  #model-select:hover{ border-color:var(--accent3); }
+  #model-select .tier{ color:var(--text-dim); }
+  #model-select svg{ margin-left:2px; }
+
+  .agent-mark{
+    width:30px; height:30px; border-radius:50%;
+    background:radial-gradient(circle at 32% 30%, var(--accent1), var(--accent3) 78%);
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ---------- Chat area ---------- */
+  #chat-scroll{
+    flex:1; overflow-y:auto; padding:10px 18px 8px;
+    display:flex; flex-direction:column;
+  }
+  #hero{
+    margin:auto; text-align:center; max-width:420px;
+    display:flex; flex-direction:column; align-items:center; gap:22px;
+  }
+  #hero .mark{
+    width:56px; height:56px; border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, var(--accent1), var(--accent3) 80%);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 40px -8px rgba(54,108,236,.55);
+  }
+  #hero h1{
+    font-family:var(--font-serif); font-weight:400; font-size:30px;
+    color:var(--text); margin:0; letter-spacing:.2px;
+  }
+  #hero p{ color:var(--text-dim); font-size:14.5px; margin:0; }
+
+  .msgs{ display:flex; flex-direction:column; gap:16px; padding:6px 0 16px; max-width:640px; width:100%; margin:0 auto; }
+  .msg{ display:flex; gap:10px; align-items:flex-start; }
+  .msg.user{ justify-content:flex-end; }
+  .msg.user .bubble{
+    background:var(--bg-3); border:1px solid var(--border);
+    border-radius:18px 18px 4px 18px; padding:11px 15px;
+    max-width:78%; font-size:15px; line-height:1.5;
+  }
+  .msg.agent{ align-items:flex-start; }
+  .msg.agent .avatar{
+    width:26px; height:26px; border-radius:50%; flex-shrink:0; margin-top:2px;
+    background:radial-gradient(circle at 32% 28%, var(--accent1), var(--accent3) 80%);
+  }
+  .msg.agent .bubble{
+    font-size:15px; line-height:1.65; color:var(--text); padding-top:2px; max-width:80%;
+  }
+
+  .thinking{ display:flex; align-items:center; gap:10px; padding:4px 0 0 2px; color:var(--text-dim); font-size:14px; }
+  .thinking img{ width:20px; height:20px; animation:spin 1.1s linear infinite; opacity:.9; }
+  .thinking-dot{ display:none; width:9px; height:9px; border-radius:50%; background:linear-gradient(135deg,var(--accent1),var(--accent3)); animation:pulse 1.1s ease-in-out infinite; }
+  .thinking span{ animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes pulse{ 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
+
+  /* ---------- Composer (liquid-glass, sutil) ---------- */
+  #composer-wrap{ flex-shrink:0; padding:8px 18px calc(16px + env(safe-area-inset-bottom,0px)); }
+  #composer{
+    max-width:640px; margin:0 auto;
+    background:rgba(255,255,255,.05);
+    backdrop-filter:blur(16px) saturate(140%);
+    -webkit-backdrop-filter:blur(16px) saturate(140%);
+    border:1px solid rgba(255,255,255,.10);
+    box-shadow:0 6px 24px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);
+    border-radius:999px; padding:6px 6px 6px 20px;
+    display:flex; align-items:center; gap:8px;
+  }
+  #composer textarea{
+    flex:1; background:none; border:none; outline:none; resize:none;
+    color:var(--text); font-family:var(--font-sans); font-size:15.5px; line-height:1.4;
+    padding:11px 0; max-height:140px;
+  }
+  #composer textarea::placeholder{ color:rgba(236,234,228,.42); }
+
+  .comp-btn{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10); color:var(--text-dim);
+    cursor:pointer; transition:background .15s, color .15s;
+  }
+  .comp-btn:hover{ background:rgba(255,255,255,.1); color:var(--text); }
+
+  #send-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:30px; height:30px; border-radius:999px; flex-shrink:0;
+    border:1px solid rgba(88,157,255,.45); cursor:pointer;
+    background:rgba(54,108,236,.14);
+    backdrop-filter:blur(6px);
+    opacity:0; transform:scale(.6); pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease, background .15s ease;
+  }
+  #send-btn:hover{ background:rgba(54,108,236,.24); }
+  #send-btn.show{ opacity:1; transform:scale(1); pointer-events:auto; }
+  #send-btn svg{ width:16px; height:9px; display:block; }
+  #new-chat-btn{ margin-left:2px; }
+
+  @media (max-width:480px){
+    #main.pushed{ transform:translateX(84vw); }
+    #sidebar{ width:84vw; }
+  }
+</style>
+</head>
+<body>
+
+<div id="scrim" onclick="toggleSidebar(false)"></div>
+
+<nav id="sidebar">
+  <div class="sb-head">
+    <span class="sb-title">Kairo</span>
+    <button class="icon-btn" onclick="toggleSidebar(false)" aria-label="Fechar barra">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>
+    </button>
+  </div>
+  <div class="sb-nav">
+    <button class="sb-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 8.5 8.5 0 0 1-3.9-.9L3 20l1.2-5a8.4 8.4 0 0 1-.7-3.5A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/></svg>Conversas</button>
+    <button class="sb-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg>Projetos</button>
+    <button class="sb-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 5L3 12l5 7M16 5l5 7-5 7"/></svg>Código</button>
+    <button class="sb-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Artefatos</button>
+  </div>
+  <div class="sb-recent">Recentes</div>
+  <div class="sb-foot">
+    <div class="sb-avatar">M</div>
+    <span style="font-size:13.5px;color:var(--text-dim);">Minha conta</span>
+  </div>
+</nav>
+
+<div id="main">
+  <header>
+    <div style="display:flex; align-items:center; gap:2px;">
+      <button class="icon-btn" onclick="toggleSidebar()" aria-label="Abrir barra">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <button class="icon-btn" id="new-chat-btn" onclick="newChat()" aria-label="Novo chat">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+
+    <div id="model-select" onclick="cycleModel()">
+      <span id="model-name">Kairo</span>
+      <span class="tier" id="model-tier">Rápido</span>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+
+    <div class="agent-mark">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <ellipse cx="12" cy="12" rx="9.5" ry="6" stroke="white" stroke-width="1.5"/>
+        <circle cx="12" cy="12" r="3.1" fill="white"/>
+      </svg>
+    </div>
+  </header>
+
+  <div id="chat-scroll">
+    <div id="hero">
+      <div class="mark">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <ellipse cx="12" cy="12" rx="9.5" ry="6" stroke="white" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="3.1" fill="white"/>
+        </svg>
+      </div>
+      <h1>No que estamos de olho hoje?</h1>
+      <p>Sou o Kairo, seu agente. Me diga o que precisa resolver.</p>
+    </div>
+    <div class="msgs" id="msgs"></div>
+  </div>
+
+  <div id="composer-wrap">
+    <div id="composer">
+      <button class="comp-btn" aria-label="Adicionar">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <textarea id="input" rows="1" placeholder="Fale com o Kairo" oninput="onType(this)" onkeydown="onKeyDown(event)"></textarea>
+      <button class="comp-btn" aria-label="Microfone">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+      </button>
+      <button id="send-btn" onclick="sendMessage()" aria-label="Enviar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="142" height="27" viewBox="0 0 142 27" fill="none"><g filter="url(#a)"><path d="M48.812 17.181l-5.021 2.152a32.85 32.85 0 0 1-12.94 2.657H.474a2.475 2.475 0 0 0 0 4.949H144a2.475 2.475 0 1 0 0-4.95h-30.376c-4.449 0-8.851-.903-12.94-2.656l-5.022-2.152a59.466 59.466 0 0 0-46.85 0z" fill="#000"/><path d="M48.812 17.181l-5.021 2.152a32.85 32.85 0 0 1-12.94 2.657H.474a2.475 2.475 0 0 0 0 4.949H144a2.475 2.475 0 1 0 0-4.95h-30.376c-4.449 0-8.851-.903-12.94-2.656l-5.022-2.152a59.466 59.466 0 0 0-46.85 0z" fill="url(#b)"/></g><defs><filter id="a" x="-14.373" y="0" width="173.22" height="39.311" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur stdDeviation="6.186" result="effect1_foregroundBlur_2578_10775"/></filter><linearGradient id="b" x1="-8.186" y1="-19.253" x2="25.928" y2="-61.447" gradientUnits="userSpaceOnUse"><stop offset=".51" stop-color="#A4A7FF"/><stop offset=".676" stop-color="#589DFF"/><stop offset=".759" stop-color="#366CEC"/><stop offset=".892" stop-color="#366CEC"/></linearGradient></defs></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const main = document.getElementById('main');
+  const scrim = document.getElementById('scrim');
+
+  function toggleSidebar(force){
+    const open = force === undefined ? !sidebar.classList.contains('open') : force;
+    sidebar.classList.toggle('open', open);
+    main.classList.toggle('pushed', open);
+    scrim.classList.toggle('show', open);
+  }
+
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('send-btn');
+
+  function onType(el){
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+    sendBtn.classList.toggle('show', el.value.trim().length > 0);
+  }
+  function onKeyDown(e){
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  const hero = document.getElementById('hero');
+  const msgsEl = document.getElementById('msgs');
+  const scrollEl = document.getElementById('chat-scroll');
+
+  /* =====================================================================
+     ICONE DE "PENSANDO" - troque so esta linha.
+     Suba seu .png para a pasta assets/ deste repositorio (ex: assets/thinking-icon.png)
+     e troque o caminho abaixo. Tambem aceita um data URI ou uma URL https://
+     ===================================================================== */
+  const THINKING_ICON_SRC = "assets/thinking-icon.png";
+  /* ===================================================================== */
+
+  function newChat(){
+    msgsEl.innerHTML = '';
+    if(!document.getElementById('hero')){
+      scrollEl.insertBefore(hero, msgsEl);
+    }
+  }
+
+  const replies = [
+    "Entendi. Vou estruturar isso em etapas claras antes de seguirmos.",
+    "Boa direção. Já vejo dois caminhos possíveis — quer que eu detalhe os dois?",
+    "Anotado. Posso começar por aí agora mesmo.",
+    "Faz sentido. Vou organizar as prioridades e volto com um plano curto."
+  ];
+
+  function sendMessage(){
+    const text = input.value.trim();
+    if(!text) return;
+    if(hero.parentNode) hero.remove();
+
+    const u = document.createElement('div');
+    u.className = 'msg user';
+    u.innerHTML = '<div class="bubble"></div>';
+    u.querySelector('.bubble').textContent = text;
+    msgsEl.appendChild(u);
+
+    input.value = '';
+    input.style.height = 'auto';
+    sendBtn.classList.remove('show');
+    scrollEl.scrollTop = scrollEl.scrollHeight;
+
+    const think = document.createElement('div');
+    think.className = 'msg agent';
+    think.innerHTML = '<div class="avatar"></div><div class="thinking"><img src="'+THINKING_ICON_SRC+'" alt="" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline-block\';"><span class="thinking-dot"></span><span>Kairo está pensando</span></div>';
+    msgsEl.appendChild(think);
+    scrollEl.scrollTop = scrollEl.scrollHeight;
+
+    setTimeout(function(){
+      think.remove();
+      const a = document.createElement('div');
+      a.className = 'msg agent';
+      const reply = replies[Math.floor(Math.random()*replies.length)];
+      a.innerHTML = '<div class="avatar"></div><div class="bubble"></div>';
+      a.querySelector('.bubble').textContent = reply;
+      msgsEl.appendChild(a);
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+    }, 1500);
+  }
+
+  const models = [['Kairo','Rápido'], ['Kairo','Médio'], ['Kairo','Profundo']];
+  let mi = 1;
+  function cycleModel(){
+    mi = (mi+1) % models.length;
+    document.getElementById('model-name').textContent = models[mi][0];
+    document.getElementById('model-tier').textContent = models[mi][1];
+  }
+</script>
+</body>
+</html>
