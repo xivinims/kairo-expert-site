@@ -169,50 +169,120 @@
   @keyframes spin{ to{ transform:rotate(360deg); } }
   @keyframes pulse{ 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
 
-  /* ---------- Composer (liquid-glass, sutil) ---------- */
-  #composer-wrap{ flex-shrink:0; padding:8px 18px calc(16px + env(safe-area-inset-bottom,0px)); }
+  /* ---------- Composer - Apple style bar (exact match to photos) ---------- */
+  #composer-wrap{
+    flex-shrink:0;
+    padding:10px 16px calc(18px + env(safe-area-inset-bottom,0px));
+  }
   #composer{
-    max-width:640px; margin:0 auto;
-    background:rgba(255,255,255,.05);
-    backdrop-filter:blur(16px) saturate(140%);
-    -webkit-backdrop-filter:blur(16px) saturate(140%);
-    border:1px solid rgba(255,255,255,.10);
-    box-shadow:0 6px 24px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);
-    border-radius:999px; padding:6px 6px 6px 20px;
-    display:flex; align-items:center; gap:8px;
+    max-width:640px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    gap:10px;
   }
-  #composer textarea{
-    flex:1; background:none; border:none; outline:none; resize:none;
-    color:var(--text); font-family:var(--font-sans); font-size:15.5px; line-height:1.4;
-    padding:11px 0; max-height:140px;
-  }
-  #composer textarea::placeholder{ color:rgba(236,234,228,.42); }
 
-  .comp-btn{
-    width:34px; height:34px; border-radius:50%; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10); color:var(--text-dim);
-    cursor:pointer; transition:background .15s, color .15s;
+  /* Side buttons: + and mic (light circles) */
+  .side-btn{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#f2f2f2;
+    border:none;
+    color:#1c1c1e;
+    cursor:pointer;
+    box-shadow:0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
+    transition:background .15s, transform .1s;
   }
-  .comp-btn:hover{ background:rgba(255,255,255,.1); color:var(--text); }
+  .side-btn:active{ transform:scale(.94); }
+  .side-btn svg{ width:20px; height:20px; }
 
+  /* Main pill */
+  .input-pill{
+    flex:1;
+    min-width:0;
+    height:44px;
+    border-radius:999px;
+    background:#f5f5f7;
+    display:flex;
+    align-items:center;
+    padding:0 6px 0 18px;
+    box-shadow:0 1px 4px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.06);
+    transition:background .2s, box-shadow .2s;
+    position:relative;
+  }
+  /* Empty state - slightly more translucent / cool tint like Siri */
+  #composer:not(.has-text) .input-pill{
+    background:linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(230,240,255,.88) 100%);
+    box-shadow:0 2px 8px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.6);
+  }
+  /* Has text state - solid light */
+  #composer.has-text .input-pill{
+    background:#f0f0f2;
+    box-shadow:0 1px 4px rgba(0,0,0,.12);
+  }
+
+  #input{
+    flex:1;
+    min-width:0;
+    background:none;
+    border:none;
+    outline:none;
+    resize:none;
+    color:#1c1c1e;
+    font-family:var(--font-sans);
+    font-size:16px;
+    line-height:1.35;
+    padding:11px 8px 11px 0;
+    max-height:120px;
+    height:22px;
+  }
+  #input::placeholder{
+    color:#8e8e93;
+  }
+
+  /* Send button (black circle with white up arrow) - inside pill when has text */
   #send-btn{
-    display:flex; align-items:center; justify-content:center;
-    width:30px; height:30px; border-radius:999px; flex-shrink:0;
-    border:1px solid rgba(88,157,255,.45); cursor:pointer;
-    background:rgba(54,108,236,.14);
-    backdrop-filter:blur(6px);
-    opacity:0; transform:scale(.6); pointer-events:none;
-    transition:opacity .18s ease, transform .18s ease, background .15s ease;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    flex-shrink:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:#1c1c1e;
+    border:none;
+    color:#fff;
+    cursor:pointer;
+    margin-left:4px;
+    transition:transform .15s, opacity .15s;
   }
-  #send-btn:hover{ background:rgba(54,108,236,.24); }
-  #send-btn.show{ opacity:1; transform:scale(1); pointer-events:auto; }
-  #send-btn svg{ width:16px; height:9px; display:block; }
+  #composer.has-text #send-btn{
+    display:flex;
+  }
+  #send-btn:active{ transform:scale(.92); }
+  #send-btn svg{ width:14px; height:14px; }
+
+  /* Mic only visible when empty */
+  #mic-btn{
+    display:flex;
+  }
+  #composer.has-text #mic-btn{
+    display:none;
+  }
+
   #new-chat-btn{ margin-left:2px; }
 
   @media (max-width:480px){
     #main.pushed{ transform:translateX(84vw); }
     #sidebar{ width:84vw; }
+    #composer{ gap:8px; }
+    .side-btn{ width:40px; height:40px; }
+    .input-pill{ height:42px; }
   }
 </style>
 </head>
@@ -281,15 +351,33 @@
 
   <div id="composer-wrap">
     <div id="composer">
-      <button class="comp-btn" aria-label="Adicionar">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <!-- + button (always visible, left) -->
+      <button class="side-btn plus-btn" aria-label="Adicionar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
       </button>
-      <textarea id="input" rows="1" placeholder="Fale com o Kairo" oninput="onType(this)" onkeydown="onKeyDown(event)"></textarea>
-      <button class="comp-btn" aria-label="Microfone">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
-      </button>
-      <button id="send-btn" onclick="sendMessage()" aria-label="Enviar">
-        <svg xmlns="http://www.w3.org/2000/svg" width="142" height="27" viewBox="0 0 142 27" fill="none"><g filter="url(#a)"><path d="M48.812 17.181l-5.021 2.152a32.85 32.85 0 0 1-12.94 2.657H.474a2.475 2.475 0 0 0 0 4.949H144a2.475 2.475 0 1 0 0-4.95h-30.376c-4.449 0-8.851-.903-12.94-2.656l-5.022-2.152a59.466 59.466 0 0 0-46.85 0z" fill="#000"/><path d="M48.812 17.181l-5.021 2.152a32.85 32.85 0 0 1-12.94 2.657H.474a2.475 2.475 0 0 0 0 4.949H144a2.475 2.475 0 1 0 0-4.95h-30.376c-4.449 0-8.851-.903-12.94-2.656l-5.022-2.152a59.466 59.466 0 0 0-46.85 0z" fill="url(#b)"/></g><defs><filter id="a" x="-14.373" y="0" width="173.22" height="39.311" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur stdDeviation="6.186" result="effect1_foregroundBlur_2578_10775"/></filter><linearGradient id="b" x1="-8.186" y1="-19.253" x2="25.928" y2="-61.447" gradientUnits="userSpaceOnUse"><stop offset=".51" stop-color="#A4A7FF"/><stop offset=".676" stop-color="#589DFF"/><stop offset=".759" stop-color="#366CEC"/><stop offset=".892" stop-color="#366CEC"/></linearGradient></defs></svg>
+
+      <!-- Main input pill -->
+      <div class="input-pill">
+        <textarea id="input" rows="1" placeholder="Fale com o Kairo" oninput="onType(this)" onkeydown="onKeyDown(event)"></textarea>
+        <!-- Black send circle (only when has text) -->
+        <button id="send-btn" onclick="sendMessage()" aria-label="Enviar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19V5"/>
+            <path d="M5 12l7-7 7 7"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mic button (only when empty) -->
+      <button class="side-btn mic-btn" id="mic-btn" aria-label="Microfone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 11a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="18" x2="12" y2="22"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -308,12 +396,14 @@
   }
 
   const input = document.getElementById('input');
+  const composer = document.getElementById('composer');
   const sendBtn = document.getElementById('send-btn');
 
   function onType(el){
     el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
-    sendBtn.classList.toggle('show', el.value.trim().length > 0);
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    const hasText = el.value.trim().length > 0;
+    composer.classList.toggle('has-text', hasText);
   }
   function onKeyDown(e){
     if(e.key === 'Enter' && !e.shiftKey){
@@ -361,12 +451,12 @@
 
     input.value = '';
     input.style.height = 'auto';
-    sendBtn.classList.remove('show');
+    composer.classList.remove('has-text');
     scrollEl.scrollTop = scrollEl.scrollHeight;
 
     const think = document.createElement('div');
     think.className = 'msg agent';
-    think.innerHTML = '<div class="avatar"></div><div class="thinking"><img src="'+THINKING_ICON_SRC+'" alt="" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline-block\';"><span class="thinking-dot"></span><span>Kairo está pensando</span></div>';
+    think.innerHTML = '<div class="avatar"></div><div class="thinking"><img src="'+THINKING_ICON_SRC+'" alt="" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'inline-block\'"><span class="thinking-dot"></span><span>Kairo está pensando</span></div>';
     msgsEl.appendChild(think);
     scrollEl.scrollTop = scrollEl.scrollHeight;
 
