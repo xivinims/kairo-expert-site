@@ -1,11 +1,32 @@
 /* ============================================
-   chat.js — Composer, mensagens, thinking icon
+   chat.js — Composer, input pill, separated mic, animated send pill
    ============================================ */
 
 function onType(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-  document.getElementById('composer').classList.toggle('has-text', el.value.trim().length > 0);
+  const val = el.value.trim();
+  const container = document.getElementById('composer-container');
+  
+  if (val.length > 0) {
+    container.classList.add('has-text');
+    container.classList.add('is-focused');
+  } else {
+    container.classList.remove('has-text');
+  }
+}
+
+function onInputFocus() {
+  const container = document.getElementById('composer-container');
+  if (container) container.classList.add('is-focused');
+}
+
+function onInputBlur() {
+  const container = document.getElementById('composer-container');
+  const input = document.getElementById('input');
+  if (container && (!input || input.value.trim().length === 0)) {
+    container.classList.remove('is-focused');
+  }
 }
 
 function onKeyDown(e) {
@@ -15,7 +36,24 @@ function onKeyDown(e) {
   }
 }
 
-const THINKING_SVG = `<svg class="thinking-icon" width="28" height="28" viewBox="0 0 50 50" fill="none"><circle cx="25" cy="25" r="23" fill="white" stroke="#e5e5ea" stroke-width="1"/><g stroke="#589DFF" stroke-width="2" stroke-linecap="round"><path d="M25 25 L25 10"/><path d="M25 25 L38 18"/><path d="M25 25 L38 32"/><path d="M25 25 L12 32"/><path d="M25 25 L12 18"/><circle cx="25" cy="10" r="3" fill="#589DFF"/><circle cx="38" cy="18" r="2.5" fill="#A4A7FF"/><circle cx="38" cy="32" r="2.5" fill="#366CEC"/><circle cx="12" cy="32" r="2.5" fill="#A4A7FF"/><circle cx="12" cy="18" r="2.5" fill="#366CEC"/><circle cx="25" cy="25" r="4" fill="#366CEC"/></g></svg>`;
+function startVoiceInput() {
+  const container = document.getElementById('composer-container');
+  const input = document.getElementById('input');
+  if (container) {
+    container.classList.add('is-focused');
+  }
+  if (input) {
+    input.focus();
+    input.value = "Ouvindo... ";
+    onType(input);
+    setTimeout(() => {
+      input.value = "Como posso organizar meus projetos?";
+      onType(input);
+    }, 1200);
+  }
+}
+
+const THINKING_SVG = `<svg class="thinking-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="4 4" stroke-opacity="0.5"/><path d="M12 6v6l4 2"/></svg>`;
 
 function newChat() {
   const msgsEl = document.getElementById('msgs');
@@ -23,13 +61,23 @@ function newChat() {
   const scrollEl = document.getElementById('chat-scroll');
   msgsEl.innerHTML = '';
   if (hero && !hero.parentNode) scrollEl.insertBefore(hero, msgsEl);
+  const input = document.getElementById('input');
+  if (input) {
+    input.value = '';
+    input.style.height = '24px';
+  }
+  const container = document.getElementById('composer-container');
+  if (container) {
+    container.classList.remove('has-text');
+    container.classList.remove('is-focused');
+  }
 }
 
 const replies = {
-  en: ["Got it. I'll structure this in clear steps.", "Good direction. I see two possible paths.", "Noted. I can start right away.", "Makes sense."],
-  pt: ["Entendi. Vou estruturar isso em etapas claras.", "Boa direção. Já vejo dois caminhos.", "Anotado. Posso começar agora mesmo.", "Faz sentido."],
-  es: ["Entendido. Voy a estructurarlo en pasos claros.", "Buena dirección.", "Anotado. Puedo empezar ahora mismo.", "Tiene sentido."],
-  fr: ["Compris. Je vais structurer cela en étapes claires.", "Bonne direction.", "Noté. Je peux commencer tout de suite.", "Ça a du sens."]
+  en: ["Understood. Here is the clear outline.", "Got it. I'll take care of this directly.", "Makes total sense. Let's do it."],
+  pt: ["Entendido. Aqui está a estrutura clara e direta.", "Perfeito. Já vou organizar isso para você.", "Faz todo sentido. Vamos em frente."],
+  es: ["Entendido. Aquí está el esquema claro y directo.", "Perfecto. Me encargo de esto.", "Tiene mucho sentido."],
+  fr: ["Compris. Voici les étapes précises et directes.", "Parfait. Je m'en occupe tout de suite.", "Très bien, avançons."]
 };
 
 function sendMessage() {
@@ -40,7 +88,7 @@ function sendMessage() {
   const hero = document.getElementById('hero');
   const msgsEl = document.getElementById('msgs');
   const scrollEl = document.getElementById('chat-scroll');
-  const composer = document.getElementById('composer');
+  const container = document.getElementById('composer-container');
 
   if (hero?.parentNode) hero.remove();
 
@@ -51,14 +99,17 @@ function sendMessage() {
   msgsEl.appendChild(u);
 
   input.value = '';
-  input.style.height = 'auto';
-  composer.classList.remove('has-text');
+  input.style.height = '24px';
+  if (container) {
+    container.classList.remove('has-text');
+    container.classList.remove('is-focused');
+  }
   scrollEl.scrollTop = scrollEl.scrollHeight;
 
-  const t = i18n[lang] || i18n.en;
+  const t = i18n[lang] || i18n.pt || i18n.en;
   const think = document.createElement('div');
   think.className = 'msg agent';
-  think.innerHTML = `<div class="avatar"></div><div class="thinking">${THINKING_SVG}<span>${t.thinking}</span></div>`;
+  think.innerHTML = `<div class="avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="9" ry="6"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></svg></div><div class="thinking">${THINKING_SVG}<span>${t.thinking}</span></div>`;
   msgsEl.appendChild(think);
   scrollEl.scrollTop = scrollEl.scrollHeight;
 
@@ -66,12 +117,13 @@ function sendMessage() {
     think.remove();
     const a = document.createElement('div');
     a.className = 'msg agent';
-    let reply = (replies[lang] || replies.en)[Math.floor(Math.random() * 4)];
+    const langReplies = replies[lang] || replies.pt || replies.en;
+    let reply = langReplies[Math.floor(Math.random() * langReplies.length)];
     const sp = (userData?.systemPrompt || '').toLowerCase();
-    if (sp.includes('direct') || sp.includes('direto')) reply = "Here's the direct answer.";
-    a.innerHTML = '<div class="avatar"></div><div class="bubble"></div>';
+    if (sp.includes('direct') || sp.includes('direto')) reply = "Aqui está a resposta direta solicitada.";
+    a.innerHTML = '<div class="avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="9" ry="6"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></svg></div><div class="bubble"></div>';
     a.querySelector('.bubble').textContent = reply;
     msgsEl.appendChild(a);
     scrollEl.scrollTop = scrollEl.scrollHeight;
-  }, 1600);
+  }, 1100);
 }

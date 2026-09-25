@@ -1,0 +1,8 @@
+{
+  "name": "Kairo",
+  "description": "Your intelligent agent. Inspired by clarity and speed.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
